@@ -1,0 +1,25 @@
+    __  ______   __________________________  ___    ____  __________ 
+   /  |/  /   | / ____/  _/ ____/ ____/ __ \/   |  / __ \/ ____/ __ \
+  / /|_/ / /| |/ / __ / // /   / / __/ /_/ / /| | / / / / __/ / /_/ /
+ / /  / / ___ / /_/ // // /___/ /_/ / _, _/ ___ |/ /_/ / /___/ _, _/ 
+/_/  /_/_/  |_\____/___/\____/\____/_/ |_/_/  |_/_____/_____/_/ |_|  
+                                                                     
+NAME
+	magicgrader - Automate compilation and testing of projects.
+
+SYNOPSIS
+	magicgrader [DIR]...
+
+DESCRIPTION
+	Automate the compilation and basic testing of many projects. Generates a colon delimited list of successes and failures. Writes all output to log files.
+
+	Provide magicgrader with as many directories as required, if none are provided, the current working directory is used.
+
+AUTHOR
+	Written by Mike Nawrocki.
+
+Reporting Bugs
+	Report bugs to <mnawrocki3 at gatech.edu>
+
+Copyright
+	Copyright 2012 Mike Nawrocki. Licensed under the LGPLv3 (GNU Lesser GPL version 3). This is Free Software: you are free to modify and redistribute it. 
