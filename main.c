@@ -90,8 +90,7 @@ void parseargs(int argc, char ***argv)
 pid_t make()
 {
 	pid_t maker = vfork();
-	int fd,makefilefd,cpmakefilefd;
-	char buf[512];
+	int fd;
 	char makefileup[256] = {};
 	strncat(makefileup, "../", 256);
 	strncat(makefileup, makefile, 256);
@@ -111,19 +110,11 @@ pid_t make()
 		}
 		if(optflags & MAKEARG)
 		{
-			if((makefilefd = open(makefileup, O_RDONLY)) == -1)
+			if(link(makefileup, "./makefile"))
 			{
-				perror("shit.\n");
-				_exit(1);
+				perror(makefileup);
+				exit(-3);
 			}
-			if((cpmakefilefd = open("makefile", O_WRONLY | O_CREAT, 0644)) == -1)
-			{
-				perror("shit.\n");
-				_exit(1);
-			}
-			while(write(cpmakefilefd, buf, read(makefilefd, buf, 512))); //copy the file.
-			close(makefilefd);
-			close(cpmakefilefd);
 			execlp("make", "make", NULL);
 		}
 		else
