@@ -8,12 +8,19 @@ NAME
 	magicgrader - Automate compilation and testing of projects.
 
 SYNOPSIS
-	magicgrader [DIR]...
+	magicgrader -m MAKEFILETEMPLATE [OPTION]... DIR(s)...
 
 DESCRIPTION
-	Automate the compilation and basic testing of many projects. Generates a colon delimited list of successes and failures. Writes all output to log files.
+	Automate the compilation and basic testing of many projects. Generates a colon delimited list of successes and failures. Writes all output to stdout OR log files.
 
-	Provide magicgrader with as many directories as required, if none are provided, the current working directory is used.
+	The -m argument is required. Provide magicgrader with a makefile that will be used to compile projects in the provided directories. 
+
+	-m	Makefile Template.
+
+	-l	Enable logging instead of output to standard out.
+
+	-t	Automate testing by redirection of the provided file
+		
 
 AUTHOR
 	Written by Mike Nawrocki.

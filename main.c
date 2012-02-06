@@ -17,60 +17,117 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#define DEBUG 1
-#undef DEBUG
+#define LOGGING 1
+#define MAKEARG (1 << 1)
+#define TESTARG (1 << 2)
 
 pid_t make();
 pid_t test();
+
+static unsigned char optflags;
+char *makefile;
+char *testfile;
+
+void parseargs(int argc, char ***argv);
 
 int main(int argc, char **argv)
 {
 	int ret = 0;
 	char *base = getcwd(NULL,0);
+	if(argc < 2)
+	{
+		printf("No directories provided! Aborting!\n");
+		exit(-1);
+	}
+	parseargs(argc, &argv);
 	do
 	{
-		if(--argc)
-			chdir(argv[argc]);
-		printf("Making the project...\n");
+		chdir(argv[optind]);
+		printf("Making \"%s\"\n", argv[optind]);
 		waitpid(make(), &ret, 0);
-		#ifdef DEBUG
-		printf("parent!\n");
-		#endif
 		if(ret)
 			fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
 		printf("make exit status: %d\n", WEXITSTATUS(ret));
+		printf("Testing \"%s\"\n", argv[optind]);
 		waitpid(test(), &ret, 0);
 		if(ret)
 			fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
 		printf("test exit status: %d\n", WEXITSTATUS(ret));
+		unlink("./makefile");
 		chdir(base);
-	} while(argc > 1);
+	} while(++optind < argc);
 	free(base);
 	return 0;
 }
+
+void parseargs(int argc, char ***argv)
+{
+	int n = 0;
+	while((n = getopt(argc, *argv, "lt:m:")) != -1)
+	{
+		switch(n)
+		{
+		case 'l':
+			optflags |= LOGGING;
+			break;
+		case 'm':
+			optflags |= MAKEARG;
+			makefile = optarg;
+			break;
+		case 't':
+			optflags |= TESTARG;
+			testfile = optarg;
+			break;
+		}
+	}
+}
+
 pid_t make()
 {
 	pid_t maker = vfork();
-	int fd;
+	int fd,makefilefd,cpmakefilefd;
+	char buf[512];
+	char makefileup[256] = {};
+	strncat(makefileup, "../", 256);
+	strncat(makefileup, makefile, 256);
 	if(!maker)
 	{
-		#ifdef DEBUG
-		printf("this is a child\n");
-		#endif
-		if((fd = open("make.log", O_WRONLY | O_CREAT, 0644)) == -1)
+		if(optflags & LOGGING)
 		{
-			perror("shit.\n");
-			_exit(1);
+			if((fd = open("make.log", O_WRONLY | O_CREAT, 0644)) == -1)
+			{
+				perror("shit.\n");
+				_exit(1);
+			}
+			ftruncate(fd, 0); //Erase Old Content
+			if((dup2(fd, 1) | dup2(fd,2)) < 0)
+				_exit(2);
+			close(fd);
 		}
-		ftruncate(fd, 0); //Erase Old Content
-		if((dup2(fd, 1) | dup2(fd,2)) < 0)
-			_exit(2);
-		close(fd);
-		execlp("make", "make", NULL);
+		if(optflags & MAKEARG)
+		{
+			if((makefilefd = open(makefileup, O_RDONLY)) == -1)
+			{
+				perror("shit.\n");
+				_exit(1);
+			}
+			if((cpmakefilefd = open("makefile", O_WRONLY | O_CREAT, 0644)) == -1)
+			{
+				perror("shit.\n");
+				_exit(1);
+			}
+			while(write(cpmakefilefd, buf, read(makefilefd, buf, 512))); //copy the file.
+			close(makefilefd);
+			close(cpmakefilefd);
+			execlp("make", "make", NULL);
+		}
+		else
+			fprintf(stderr, "No template makefile provided!\n");
 		_exit(3);
 	}
 	if(maker < 0)
@@ -84,17 +141,17 @@ pid_t test()
 	int fd;
 	if(!tester)
 	{
-		#ifdef DEBUG
-		printf("this is a child\n");
-		#endif
-		if((fd = open("test.log", O_WRONLY | O_CREAT, 0644)) == -1)
+		if(optflags & LOGGING)
 		{
-			perror("shit.\n");
-			_exit(1);
+			if((fd = open("test.log", O_WRONLY | O_CREAT, 0644)) == -1)
+			{
+				perror("shit.\n");
+				_exit(1);
+			}
+			ftruncate(fd, 0); //Erase Old Content
+			if((dup2(fd, 1) | dup2(fd,2)) < 0)
+				_exit(2);
 		}
-		ftruncate(fd, 0); //Erase Old Content
-		if((dup2(fd, 1) | dup2(fd,2)) < 0)
-			_exit(2);
 		execl("./tst", "./tst", NULL);
 		_exit(3);
 	}
