@@ -58,7 +58,6 @@ int main(int argc, char **argv)
 		if(ret)
 			fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
 		printf("test exit status: %d\n", WEXITSTATUS(ret));
-		unlink("./makefile");
 		chdir(base);
 	} while(++optind < argc);
 	free(base);
@@ -110,12 +109,7 @@ pid_t make()
 		}
 		if(optflags & MAKEARG)
 		{
-			if(link(makefileup, "./makefile"))
-			{
-				perror(makefileup);
-				exit(-3);
-			}
-			execlp("make", "make", NULL);
+			execlp("make", "make", "-f", makefileup, NULL);
 		}
 		else
 			fprintf(stderr, "No template makefile provided!\n");
