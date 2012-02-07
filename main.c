@@ -53,14 +53,23 @@ int main(int argc, char **argv)
 		printf("Making \"%s\"\n", argv[optind]);
 		waitpid(make(), &ret, 0);
 		if(ret)
+		{
 			fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
-		printf("make exit status: %d\n", WEXITSTATUS(ret));
-		printf("Testing \"%s\"\n", argv[optind]);
-		waitpid(test(), &ret, 0);
+			printf("make exit status: %d\n", WEXITSTATUS(ret));
+		}
+		else
+		{
+			printf("Testing \"%s\"\n", argv[optind]);
+			waitpid(test(), &ret, 0);
+		}
 		if(ret)
+		{
 			fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
-		printf("test exit status: %d\n", WEXITSTATUS(ret));
+			printf("test exit status: %d\n", WEXITSTATUS(ret));
+		}
 		chdir(base);
+		printf("Press Enter to continue");
+		getchar();
 	} while(++optind < argc);
 	free(base);
 	return 0;

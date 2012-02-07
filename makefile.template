@@ -1,2 +1,2 @@
-tst: tst.c
+tst:
 	gcc -o tst *.c
