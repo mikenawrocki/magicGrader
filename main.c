@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -31,6 +32,7 @@ pid_t test();
 
 static unsigned char optflags;
 char *makefile;
+char makefilepath[PATH_MAX];
 char *testfile;
 
 void parseargs(int argc, char ***argv);
@@ -77,6 +79,7 @@ void parseargs(int argc, char ***argv)
 		case 'm':
 			optflags |= MAKEARG;
 			makefile = optarg;
+			realpath(makefile, makefilepath);
 			break;
 		case 't':
 			optflags |= TESTARG;
@@ -90,9 +93,6 @@ pid_t make()
 {
 	pid_t maker = vfork();
 	int fd;
-	char makefileup[256] = {};
-	strncat(makefileup, "../", 256);
-	strncat(makefileup, makefile, 256);
 	if(!maker)
 	{
 		if(optflags & LOGGING)
@@ -109,7 +109,7 @@ pid_t make()
 		}
 		if(optflags & MAKEARG)
 		{
-			execlp("make", "make", "-f", makefileup, NULL);
+			execlp("make", "make", "-f", makefilepath, NULL);
 		}
 		else
 			fprintf(stderr, "No template makefile provided!\n");
