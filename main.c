@@ -41,11 +41,6 @@ int main(int argc, char **argv)
 {
 	int ret = 0;
 	char *base = getcwd(NULL,0);
-	if(argc < 2)
-	{
-		printf("No directories provided! Aborting!\n");
-		exit(-1);
-	}
 	parseargs(argc, &argv);
 	do
 	{
@@ -95,6 +90,16 @@ void parseargs(int argc, char ***argv)
 			testfile = optarg;
 			break;
 		}
+	}
+	if(optind == argc)
+	{
+		fprintf(stderr,"No Directories provided! Aborting!\n");
+		exit(-1);
+	}
+	if(~optflags & MAKEARG)
+	{
+		fprintf(stderr, "No Makefile template provided. Aborting!\n");
+		exit(-2);
 	}
 }
 
