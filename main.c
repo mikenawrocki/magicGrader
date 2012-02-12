@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <curses.h>
 
 #define LOGGING 1
 #define MAKEARG (1 << 1)
@@ -44,29 +45,33 @@ int main(int argc, char **argv)
 	parseargs(argc, &argv);
 	do
 	{
-		chdir(argv[optind]);
-		printf("Making \"%s\"\n", argv[optind]);
-		waitpid(make(), &ret, 0);
-		if(ret)
+		if(chdir(argv[optind]))
 		{
-			fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
-			printf("make exit status: %d\n", WEXITSTATUS(ret));
+			printf("Making \"%s\"\n", argv[optind]);
+			waitpid(make(), &ret, 0);
+			if(ret)
+			{
+				fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
+				printf("make exit status: %d\n", WEXITSTATUS(ret));
+			}
+			else
+			{
+				printf("Testing \"%s\"\n", argv[optind]);
+				waitpid(test(), &ret, 0);
+			}
+			if(ret)
+			{
+				fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
+				printf("test exit status: %d\n", WEXITSTATUS(ret));
+			}
+			chdir(base);
+			printf("Press Enter to continue");
+			getchar();
 		}
 		else
-		{
-			printf("Testing \"%s\"\n", argv[optind]);
-			waitpid(test(), &ret, 0);
-		}
-		if(ret)
-		{
-			fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
-			printf("test exit status: %d\n", WEXITSTATUS(ret));
-		}
-		chdir(base);
-		printf("Press Enter to continue");
-		getchar();
+			perror(argv[optind]);
 	} while(++optind < argc);
-	free(base);
+	free(base); 
 	return 0;
 }
 
