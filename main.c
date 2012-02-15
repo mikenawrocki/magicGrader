@@ -55,14 +55,14 @@ int main(int argc, char **argv)
 			waitpid(make(), &ret, 0);
 			if(ret)
 			{
-				fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
+				fprintf(stderr, "Make failed!\n");
 				printf("make exit status: %d\n", WEXITSTATUS(ret));
 			}
 			printf("Testing \"%s\"\n", argv[opts]);
 			waitpid(test(), &ret, 0);
 			if(ret)
 			{
-				fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
+				fprintf(stderr, "Testing failed!\n");
 				printf("test exit status: %d\n", WEXITSTATUS(ret));
 			}
 			printf("Press Enter to continue");
@@ -121,7 +121,7 @@ pid_t make()
 		{
 			if((fd = open("make.log", O_WRONLY | O_CREAT, 0644)) == -1)
 			{
-				perror("shit.\n");
+				perror("make.log");
 				_exit(1);
 			}
 			ftruncate(fd, 0); //Erase Old Content
@@ -138,7 +138,7 @@ pid_t make()
 		_exit(3);
 	}
 	if(maker < 0)
-		perror("vfork!");
+		perror("in make()");
 	return maker;
 
 }
@@ -152,27 +152,33 @@ pid_t test()
 		{
 			if((fd = open("test.log", O_WRONLY | O_CREAT, 0644)) == -1)
 			{
-				perror("shit.\n");
+				perror("test.log");
 				_exit(1);
 			}
 			ftruncate(fd, 0); //Erase Old Content
 			if((dup2(fd, 1) | dup2(fd,2)) < 0)
+			{
+				perror("stdin and stderr");
 				_exit(2);
+			}
 		}
 		if(optflags & TESTARG)
 		{
 			if((tst = open(testfilepath, O_RDONLY)) == -1)
 			{
-				perror("shit.\n");
+				perror(testfile);
 				_exit(1);
 			}
 			if((dup2(tst, 0)) < 0)
+			{
+				perror("stdin redirect");
 				_exit(2);
+			}
 		}
 		execl("./tst", "./tst", NULL);
 		_exit(3);
 	}
 	if(tester < 0)
-		perror("vfork!");
+		perror("in test()");
 	return tester;
 }
