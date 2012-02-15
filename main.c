@@ -23,10 +23,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-//#define LOGGING (1 << 0)
-//#define MAKEARG (1 << 1)
-//#define TESTARG (1 << 2)
-
 struct flags {
 	unsigned int logging : 1;
 	unsigned int makearg : 1;
@@ -35,15 +31,11 @@ struct flags {
 	char testfilepath[PATH_MAX];
 } FLAGS = { .logging = 0, .makearg = 0, .testarg = 0} ;
 
-
 pid_t make();
 pid_t test();
 void parseargs(int argc, char ***argv);
 
 static unsigned char optflags;
-//char makefilepath[PATH_MAX];
-//char testfilepath[PATH_MAX];
-
 
 int main(int argc, char **argv)
 {
@@ -94,17 +86,14 @@ void parseargs(int argc, char ***argv)
 		switch(n)
 		{
 		case 'l':
-			//optflags |= LOGGING;
 			FLAGS.logging = 1;
 			break;
 		case 'm':
-			//optflags |= MAKEARG;
 			FLAGS.makearg = 1;
 			makefile = optarg;
 			realpath(makefile, FLAGS.makefilepath);
 			break;
 		case 't':
-			//optflags |= TESTARG;
 			FLAGS.testarg = 1;
 			testfile = optarg;
 			realpath(testfile, FLAGS.testfilepath);
@@ -129,7 +118,6 @@ pid_t make()
 	int fd;
 	if(!maker)
 	{
-		//if(optflags & LOGGING)
 		if(FLAGS.logging)
 		{
 			if((fd = open("make.log", O_WRONLY | O_CREAT, 0644)) == -1)
@@ -161,7 +149,6 @@ pid_t test()
 	int fd,tst;
 	if(!tester)
 	{
-		//if(optflags & LOGGING)
 		if(FLAGS.logging)
 		{
 			if((fd = open("test.log", O_WRONLY | O_CREAT, 0644)) == -1)
@@ -176,7 +163,6 @@ pid_t test()
 				_exit(2);
 			}
 		}
-		//if(optflags & TESTARG)
 		if(FLAGS.testarg)
 		{
 			if((tst = open(FLAGS.testfilepath, O_RDONLY)) == -1)
