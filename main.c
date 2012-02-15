@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <curses.h>
 
 #define LOGGING 1
 #define MAKEARG (1 << 1)
@@ -35,42 +34,45 @@ static unsigned char optflags;
 char *makefile;
 char makefilepath[PATH_MAX];
 char *testfile;
+char testfilepath[PATH_MAX];
 
 void parseargs(int argc, char ***argv);
 
 int main(int argc, char **argv)
 {
 	int ret = 0;
+	int i;
+	int opts;
 	char *base = getcwd(NULL,0);
 	parseargs(argc, &argv);
-	do
+	opts = optind;
+	while(opts < argc)
 	{
-		if(chdir(argv[optind]))
+		if(chdir(argv[opts]) != -1)
 		{
-			printf("Making \"%s\"\n", argv[optind]);
+			ret = 0;
+			printf("Making \"%s\"\n", argv[opts]);
 			waitpid(make(), &ret, 0);
 			if(ret)
 			{
 				fprintf(stderr, "Make failed! Check \"make.log\" for error output.\n");
 				printf("make exit status: %d\n", WEXITSTATUS(ret));
 			}
-			else
-			{
-				printf("Testing \"%s\"\n", argv[optind]);
-				waitpid(test(), &ret, 0);
-			}
+			printf("Testing \"%s\"\n", argv[opts]);
+			waitpid(test(), &ret, 0);
 			if(ret)
 			{
 				fprintf(stderr, "Testing failed! Check \"output.log\" for error output.\n");
 				printf("test exit status: %d\n", WEXITSTATUS(ret));
 			}
-			chdir(base);
 			printf("Press Enter to continue");
 			getchar();
 		}
 		else
-			perror("SHIT.");
-	} while(++optind < argc);
+			perror(argv[opts]);
+		chdir(base);
+		opts++;
+	} 
 	free(base); 
 	return 0;
 }
@@ -93,6 +95,7 @@ void parseargs(int argc, char ***argv)
 		case 't':
 			optflags |= TESTARG;
 			testfile = optarg;
+			realpath(testfile, testfilepath);
 			break;
 		}
 	}
@@ -142,7 +145,7 @@ pid_t make()
 pid_t test()
 {
 	pid_t tester = vfork();
-	int fd;
+	int fd,tst;
 	if(!tester)
 	{
 		if(optflags & LOGGING)
@@ -154,6 +157,16 @@ pid_t test()
 			}
 			ftruncate(fd, 0); //Erase Old Content
 			if((dup2(fd, 1) | dup2(fd,2)) < 0)
+				_exit(2);
+		}
+		if(optflags & TESTARG)
+		{
+			if((tst = open(testfilepath, O_RDONLY)) == -1)
+			{
+				perror("shit.\n");
+				_exit(1);
+			}
+			if((dup2(tst, 0)) < 0)
 				_exit(2);
 		}
 		execl("./tst", "./tst", NULL);
