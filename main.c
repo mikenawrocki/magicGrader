@@ -13,64 +13,51 @@
 **   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF    **
 **   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.             **
 *********************************************************************************/
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <string.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-
-struct flags {
-	unsigned int logging : 1;
-	unsigned int makearg : 1;
-	unsigned int testarg : 1;
-	char makefilepath[PATH_MAX];
-	char testfilepath[PATH_MAX];
-} FLAGS = { .logging = 0, .makearg = 0, .testarg = 0} ;
-
-pid_t make();
-pid_t test();
-void parseargs(int argc, char ***argv);
-
-static unsigned char optflags;
-
+#include "magicgrader.h"
+static struct flags FLAGS;
+pid_t maker, tester;
 int main(int argc, char **argv)
 {
 	int ret = 0;
 	int i;
-	int opts;
 	char *base = getcwd(NULL,0);
 	parseargs(argc, &argv);
-	opts = optind;
-	while(opts < argc)
+	struct sigaction new_action, old_action;
+	new_action.sa_handler = murder;
+	sigemptyset(&new_action.sa_mask);
+	new_action.sa_flags = 0;
+	sigaction(SIGINT, &new_action, NULL); 
+
+	while(optind < argc)
 	{
-		if(chdir(argv[opts]) != -1)
+		if(chdir(argv[optind]) != -1)
 		{
 			ret = 0;
-			printf("Making \"%s\"\n", argv[opts]);
-			waitpid(make(), &ret, 0);
+			printf("Making \"%s\"\n", argv[optind]);
+			maker = make();
+			waitpid(maker, &ret, 0);
+			maker = 0;
 			if(ret)
 			{
 				fprintf(stderr, "Make failed!\n");
 				printf("make exit status: %d\n", WEXITSTATUS(ret));
 			}
-			printf("Testing \"%s\"\n", argv[opts]);
-			waitpid(test(), &ret, 0);
+			printf("Testing \"%s\"\n", argv[optind]);
+			tester = test();
+			waitpid(tester, &ret, 0);
+			tester = 0;
 			if(ret)
 			{
 				fprintf(stderr, "Testing failed!\n");
 				printf("test exit status: %d\n", WEXITSTATUS(ret));
 			}
-			printf("Press Enter to continue");
-			getchar();
 		}
 		else
-			perror(argv[opts]);
+			perror(argv[optind]);
 		chdir(base);
-		opts++;
+		optind++;
+		printf("\nPress Enter to continue");
+		getchar();
 	} 
 	free(base); 
 	return 0;

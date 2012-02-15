@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = *.c
 CFLAGS += -lm
 CFLAGS += -Wall -Werror -pedantic -std=c99
-OUTPUT = -o tst
+OUTPUT = tst
 
 tst:
-	${CC} ${OUTPUT} ${CFLAGS}
+	${CC} -o ${OUTPUT} ${CFLAGS}
