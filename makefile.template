@@ -1,2 +1,8 @@
+CC = gcc
+CFLAGS = *.c
+CFLAGS += -lm
+CFLAGS += -Wall -Werror -pedantic -std=c99
+OUTPUT = -o tst
+
 tst:
-	gcc -o tst *.c
+	${CC} ${OUTPUT} ${CFLAGS}

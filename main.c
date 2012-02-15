@@ -23,20 +23,27 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#define LOGGING 1
-#define MAKEARG (1 << 1)
-#define TESTARG (1 << 2)
+//#define LOGGING (1 << 0)
+//#define MAKEARG (1 << 1)
+//#define TESTARG (1 << 2)
+
+struct flags {
+	unsigned int logging : 1;
+	unsigned int makearg : 1;
+	unsigned int testarg : 1;
+	char makefilepath[PATH_MAX];
+	char testfilepath[PATH_MAX];
+} FLAGS = { .logging = 0, .makearg = 0, .testarg = 0} ;
+
 
 pid_t make();
 pid_t test();
+void parseargs(int argc, char ***argv);
 
 static unsigned char optflags;
-char *makefile;
-char makefilepath[PATH_MAX];
-char *testfile;
-char testfilepath[PATH_MAX];
+//char makefilepath[PATH_MAX];
+//char testfilepath[PATH_MAX];
 
-void parseargs(int argc, char ***argv);
 
 int main(int argc, char **argv)
 {
@@ -80,22 +87,27 @@ int main(int argc, char **argv)
 void parseargs(int argc, char ***argv)
 {
 	int n = 0;
+	char *makefile;
+	char *testfile;
 	while((n = getopt(argc, *argv, "lt:m:")) != -1)
 	{
 		switch(n)
 		{
 		case 'l':
-			optflags |= LOGGING;
+			//optflags |= LOGGING;
+			FLAGS.logging = 1;
 			break;
 		case 'm':
-			optflags |= MAKEARG;
+			//optflags |= MAKEARG;
+			FLAGS.makearg = 1;
 			makefile = optarg;
-			realpath(makefile, makefilepath);
+			realpath(makefile, FLAGS.makefilepath);
 			break;
 		case 't':
-			optflags |= TESTARG;
+			//optflags |= TESTARG;
+			FLAGS.testarg = 1;
 			testfile = optarg;
-			realpath(testfile, testfilepath);
+			realpath(testfile, FLAGS.testfilepath);
 			break;
 		}
 	}
@@ -104,7 +116,7 @@ void parseargs(int argc, char ***argv)
 		fprintf(stderr,"No Directories provided! Aborting!\n");
 		exit(-1);
 	}
-	if(~optflags & MAKEARG)
+	if(!(FLAGS.makearg))
 	{
 		fprintf(stderr, "No Makefile template provided. Aborting!\n");
 		exit(-2);
@@ -117,7 +129,8 @@ pid_t make()
 	int fd;
 	if(!maker)
 	{
-		if(optflags & LOGGING)
+		//if(optflags & LOGGING)
+		if(FLAGS.logging)
 		{
 			if((fd = open("make.log", O_WRONLY | O_CREAT, 0644)) == -1)
 			{
@@ -129,9 +142,9 @@ pid_t make()
 				_exit(2);
 			close(fd);
 		}
-		if(optflags & MAKEARG)
+		if(FLAGS.makearg)
 		{
-			execlp("make", "make", "-f", makefilepath, NULL);
+			execlp("make", "make", "-f", FLAGS.makefilepath, NULL);
 		}
 		else
 			fprintf(stderr, "No template makefile provided!\n");
@@ -148,7 +161,8 @@ pid_t test()
 	int fd,tst;
 	if(!tester)
 	{
-		if(optflags & LOGGING)
+		//if(optflags & LOGGING)
+		if(FLAGS.logging)
 		{
 			if((fd = open("test.log", O_WRONLY | O_CREAT, 0644)) == -1)
 			{
@@ -162,11 +176,12 @@ pid_t test()
 				_exit(2);
 			}
 		}
-		if(optflags & TESTARG)
+		//if(optflags & TESTARG)
+		if(FLAGS.testarg)
 		{
-			if((tst = open(testfilepath, O_RDONLY)) == -1)
+			if((tst = open(FLAGS.testfilepath, O_RDONLY)) == -1)
 			{
-				perror(testfile);
+				perror(FLAGS.testfilepath);
 				_exit(1);
 			}
 			if((dup2(tst, 0)) < 0)
