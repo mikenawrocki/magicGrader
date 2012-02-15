@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 			getchar();
 		}
 		else
-			perror(argv[optind]);
+			perror("SHIT.");
 	} while(++optind < argc);
 	free(base); 
 	return 0;
