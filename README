@@ -23,6 +23,8 @@ DESCRIPTION
 	-l	Enable logging instead of output to standard out.
 
 	-t	Automate testing by redirection of the provided file
+
+	-e  File that will cause an error.
 		
 
 AUTHOR
@@ -33,3 +35,7 @@ Reporting Bugs
 
 Copyright
 	Copyright 2012 Mike Nawrocki. Licensed under the LGPLv3 (GNU Lesser GPL version 3). This is Free Software: you are free to modify and redistribute it. 
+
+
+######################
+

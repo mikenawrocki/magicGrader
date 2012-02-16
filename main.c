@@ -15,7 +15,7 @@
 *********************************************************************************/
 #include "magicgrader.h"
 static struct flags FLAGS;
-pid_t maker, tester;
+pid_t maker, tester, errorer;
 int main(int argc, char **argv)
 {
 	int ret = 0;
@@ -51,6 +51,19 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Testing failed!\n");
 				printf("test exit status: %d\n", WEXITSTATUS(ret));
 			}
+			if(FLAGS.errorarg)
+			{
+				printf("Testing \"%s\"\n", argv[optind]);
+				errorer = error();
+				waitpid(tester, &ret, 0);
+				tester = 0;
+				if(ret)
+				{
+					fprintf(stderr, "Testing failed!\n");
+					printf("test exit status: %d\n", WEXITSTATUS(ret));
+				}
+			}
+			errorer = 0;
 		}
 		else
 			perror(argv[optind]);
@@ -68,7 +81,8 @@ void parseargs(int argc, char ***argv)
 	int n = 0;
 	char *makefile;
 	char *testfile;
-	while((n = getopt(argc, *argv, "lt:m:")) != -1)
+	char *errorfile;
+	while((n = getopt(argc, *argv, "lt:m:e:")) != -1)
 	{
 		switch(n)
 		{
@@ -84,6 +98,11 @@ void parseargs(int argc, char ***argv)
 			FLAGS.testarg = 1;
 			testfile = optarg;
 			realpath(testfile, FLAGS.testfilepath);
+			break;
+		case 'e':
+			FLAGS.errorarg = 1;
+			errorfile = optarg;
+			realpath(errorfile, FLAGS.errorfilepath);
 			break;
 		}
 	}
@@ -169,4 +188,44 @@ pid_t test()
 	if(tester < 0)
 		perror("in test()");
 	return tester;
+}
+pid_t error()
+{
+	pid_t errorpid = vfork();
+	int fd,tst;
+	if(!errorpid)
+	{
+		if(FLAGS.logging)
+		{
+			if((fd = open("error.log", O_WRONLY | O_CREAT, 0644)) == -1)
+			{
+				perror("error.log");
+				_exit(1);
+			}
+			ftruncate(fd, 0); //Erase Old Content
+			if((dup2(fd, 1) | dup2(fd,2)) < 0)
+			{
+				perror("stdin and stderr");
+				_exit(2);
+			}
+		}
+		if(FLAGS.errorarg)
+		{
+			if((tst = open(FLAGS.errorfilepath, O_RDONLY)) == -1)
+			{
+				perror(FLAGS.errorfilepath);
+				_exit(1);
+			}
+			if((dup2(tst, 0)) < 0)
+			{
+				perror("stdin redirect");
+				_exit(2);
+			}
+		}
+		execl("./tst", "./tst", NULL);
+		_exit(3);
+	}
+	if(errorpid< 0)
+		perror("in errorer()");
+	return errorpid;
 }
